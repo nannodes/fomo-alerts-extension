@@ -1,0 +1,16 @@
+FOMO Alerts
+Copyright © 2026 FOMO Alerts. All rights reserved.
+
+This repository holds the source code of the FOMO Alerts Chrome extension (extension/) and verify.js. It is public
+so that anyone can check what the extension does. You may read it, and run verify.js to check that the extension in
+the Chrome Web Store is this code. You may not copy, change, publish, share, sell or reuse this code or any part of
+it, or use it to make another product, without written permission from FOMO Alerts. (GitHub's own terms let people
+view and fork public repositories on GitHub; that gives no permission to use the code anywhere else.)
+
+These parts are not ours and keep their own licenses and owners:
+- extension/vendor/qrcode.js: QR Code Generator for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT license (see
+  the top of that file).
+- The Telegram, X, Discord, blockchain and token logos, and the icons copied from fomo.family, belong to their
+  owners.
+
+FOMO Alerts is not affiliated with, endorsed by or sponsored by Fomo (fomo.family).

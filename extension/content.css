@@ -1,0 +1,418 @@
+/* FOMO Alerts card, styled to sit under Fomo's Buy/Sell box */
+.fa-panel {
+  position: relative;
+  --fa-green: rgb(33, 201, 94);
+  --fa-red: rgb(255, 98, 46);
+  --fa-blue: #4f9dff;
+  --fa-accent: #516af6;
+  --fa-bg2: rgba(255, 255, 255, 0.05);
+  --fa-bg3: rgba(255, 255, 255, 0.1);
+  --fa-dim: rgb(152, 153, 163);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.35;
+  border: 1px solid var(--fa-bg3);
+  border-radius: 16px;
+  padding: 8px;
+}
+.fa-panel .fa-head { display: flex; align-items: center; gap: 6px; padding: 2px 4px; }
+.fa-panel .fa-title { font-weight: 700; font-size: 14px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fa-panel .fa-conn,
+.fa-panel .fa-user {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  background: var(--fa-bg2); color: var(--fa-dim); cursor: pointer; border: 0;
+  max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0;
+}
+.fa-panel .fa-user[hidden] { display: none; } /* Fomo's own CSS must not show it again */
+.fa-panel .fa-user:has(.fa-badge) { max-width: 140px; }
+.fa-panel .fa-conn.fa-ok { color: var(--fa-green); background: rgba(33, 201, 94, 0.12); }
+.fa-panel .fa-conn.fa-warn,
+.fa-panel .fa-user.fa-warn { color: #fff; background: var(--fa-accent); }
+.fa-panel .fa-icon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 22px; height: 22px; border-radius: 6px; border: 0; padding: 0;
+  background: var(--fa-bg2); color: var(--fa-dim); font-weight: 700; cursor: pointer;
+}
+.fa-panel .fa-icon:hover { color: inherit; background: var(--fa-bg3); }
+.fa-panel.fa-show-settings .fa-gear { color: #fff; background: var(--fa-accent); }
+.fa-panel .fa-min { display: none; }
+
+/* Telegram logo used instead of the word */
+.fa-panel .fa-tg { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.22em; }
+
+/* settings menu (gear) */
+.fa-panel .fa-settings { display: none; flex-direction: column; gap: 8px; background: var(--fa-bg2); border-radius: 12px; padding: 8px; font-size: 12px; }
+.fa-panel.fa-show-settings .fa-settings { display: flex; }
+.fa-panel .fa-set-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fa-panel .fa-set-note { color: var(--fa-dim); }
+.fa-panel .fa-set-note:empty { display: none; }
+.fa-panel .fa-seg { display: flex; padding: 2px; gap: 2px; border-radius: 8px; border: 1px solid var(--fa-bg3); }
+.fa-panel .fa-seg button {
+  border: 0; border-radius: 6px; padding: 3px 8px; background: transparent; color: var(--fa-dim);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.fa-panel .fa-seg button.fa-on { background: var(--fa-accent); color: #fff; }
+
+/* not holding this coin: take profit and stop loss grayed out (Buy the dip stays) */
+.fa-panel .fa-side.fa-side-off { opacity: 0.4; }
+.fa-panel .fa-in:disabled,
+.fa-panel button.fa-chip:disabled,
+.fa-panel button.fa-chip:disabled:hover { cursor: not-allowed; background: var(--fa-bg2); }
+.fa-panel .fa-in:disabled { background: transparent; }
+
+/* fallback when Fomo's Buy/Sell box can't be found: float in the bottom-right corner */
+.fa-panel.fa-floating {
+  position: fixed; right: 16px; bottom: 16px; z-index: 2147483000; width: 340px; margin: 0;
+  max-height: calc(100vh - 32px); overflow-y: auto; background: #12111c; color: #f4f4f6;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+.fa-panel.fa-floating .fa-min { display: flex; }
+.fa-panel.fa-collapsed > :not(.fa-head) { display: none !important; }
+
+/* inside Fomo's Position popup: shrinks to the room left and scrolls, without a visible scrollbar */
+.fa-panel.fa-in-modal {
+  margin-top: 0; flex: 0 1 auto; min-height: 120px; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.fa-panel.fa-in-modal::-webkit-scrollbar { display: none; }
+.fa-panel.fa-in-modal > * { flex-shrink: 0; }
+/* trade popup: its column fades out over the last 4rem, so the card stops above that */
+.fa-panel.fa-in-trade { margin-bottom: 64px; }
+
+.fa-panel .fa-pos { padding: 0 4px; font-size: 12px; }
+
+/* one block per section: take profit (+ buy the dip) and stop loss */
+.fa-panel .fa-block { display: flex; flex-direction: column; gap: 8px; background: var(--fa-bg2); border-radius: 12px; padding: 8px; }
+.fa-panel .fa-divider { height: 1px; background: var(--fa-bg3); margin: 0 -2px; }
+.fa-panel .fa-side { display: flex; flex-direction: column; gap: 6px; }
+.fa-panel .fa-side-head { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+.fa-panel .fa-label { font-weight: 700; flex: 1; white-space: nowrap; }
+.fa-panel .fa-row { display: flex; align-items: center; gap: 8px; }
+.fa-panel .fa-input {
+  display: flex; align-items: center; gap: 2px; background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--fa-bg3); border-radius: 8px; padding: 4px 8px; width: 92px; flex-shrink: 0;
+}
+.fa-panel .fa-input:focus-within { border-color: var(--fa-accent); }
+.fa-panel .fa-input span { color: var(--fa-dim); }
+.fa-panel .fa-input input {
+  width: 100%; min-width: 0; background: transparent; border: 0; outline: none; color: inherit;
+  font: inherit; font-weight: 700; padding: 0; -moz-appearance: textfield;
+}
+.fa-panel .fa-input input::-webkit-outer-spin-button,
+.fa-panel .fa-input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.fa-panel .fa-target { display: flex; flex-direction: column; min-width: 0; color: var(--fa-dim); font-size: 12px; line-height: 1.3; }
+.fa-panel .fa-target > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fa-panel .fa-target > span:empty { display: none; }
+.fa-panel .fa-money { font-size: 11px; }
+
+/* Show / Remove line button, one per level */
+.fa-panel .fa-line-btn {
+  flex-shrink: 0; height: 22px; padding: 0 8px; border-radius: 999px; border: 1px dashed var(--fa-bg3);
+  background: transparent; color: var(--fa-dim); font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.fa-panel .fa-line-btn:hover { color: inherit; border-color: var(--fa-accent); }
+.fa-panel .fa-line-btn.fa-on { border-style: solid; color: var(--fa-red); }
+/* switched on, but the chart doesn't show it (yet) */
+.fa-panel .fa-line-btn.fa-wait { border-style: dashed; border-color: var(--fa-accent); color: var(--fa-accent); }
+
+/* trailing stop switch */
+.fa-panel .fa-trail { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--fa-dim); cursor: pointer; white-space: nowrap; }
+.fa-panel .fa-trail input { margin: 0; accent-color: var(--fa-red); cursor: pointer; }
+.fa-panel .fa-trail:has(input:checked) { color: var(--fa-red); }
+
+/* quick % buttons (editable with the gear open) */
+.fa-panel .fa-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.fa-panel .fa-chip {
+  height: 28px; border-radius: 8px; border: 0; background: var(--fa-bg2); color: inherit;
+  font-size: 12px; font-weight: 700; cursor: pointer; min-width: 0;
+}
+.fa-panel .fa-side[data-side="tp"] .fa-chip { color: var(--fa-green); }
+.fa-panel .fa-side[data-side="sl"] .fa-chip { color: var(--fa-red); }
+.fa-panel .fa-side[data-side="dip"] .fa-chip { color: var(--fa-blue); }
+.fa-panel button.fa-chip:hover { background: var(--fa-bg3); }
+.fa-panel .fa-chip-edit {
+  display: flex; align-items: center; justify-content: center; gap: 1px; padding: 0 4px;
+  border: 1px dashed var(--fa-bg3); cursor: text;
+}
+.fa-panel .fa-chip-edit:focus-within { border: 1px solid var(--fa-accent); }
+.fa-panel .fa-chip-edit input {
+  width: 3.2ch; min-width: 0; padding: 0; border: 0; outline: none; background: transparent;
+  color: inherit; font: inherit; text-align: center;
+}
+.fa-panel .fa-pencil { width: 10px; height: 10px; flex-shrink: 0; margin-left: 2px; color: var(--fa-dim); }
+
+/* × next to a field: empty it */
+.fa-panel .fa-clear { width: 22px; height: 22px; color: var(--fa-dim); }
+.fa-panel .fa-clear:hover { color: inherit; }
+
+/* explanation after hovering a label for a second */
+.fa-panel [data-tip] { cursor: help; }
+.fa-panel .fa-tip {
+  position: absolute; left: 8px; right: 8px; z-index: 5; display: none; padding: 8px 10px; border-radius: 10px;
+  background: #23222e; color: #f4f4f6; border: 1px solid var(--fa-bg3); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  font-size: 12px; font-weight: 400; line-height: 1.45; pointer-events: none;
+}
+.fa-panel .fa-tip.fa-tip-on { display: block; }
+/* alerts already set on this coin, one row each */
+.fa-panel .fa-list { display: flex; flex-direction: column; gap: 4px; }
+.fa-panel .fa-list:empty { display: none; }
+.fa-panel .fa-list-title { padding: 0 4px; font-size: 11px; font-weight: 700; color: var(--fa-dim); text-transform: uppercase; letter-spacing: 0.03em; }
+.fa-panel .fa-alert { display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 8px; border-radius: 10px; background: var(--fa-bg2); }
+.fa-panel .fa-alert-main { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; }
+.fa-panel .fa-tag { font-size: 11px; font-weight: 700; padding: 1px 5px; border-radius: 5px; flex-shrink: 0; }
+.fa-panel .fa-tag.fa-green { background: rgba(33, 201, 94, 0.15); }
+.fa-panel .fa-tag.fa-red { background: rgba(255, 98, 46, 0.15); }
+.fa-panel .fa-tag.fa-blue { background: rgba(79, 157, 255, 0.15); }
+.fa-panel .fa-alert-lvl { font-weight: 700; }
+.fa-panel .fa-alert-money { color: var(--fa-dim); overflow: hidden; text-overflow: ellipsis; }
+.fa-panel .fa-bin { width: 24px; height: 24px; background: transparent; }
+.fa-panel .fa-bin:hover { color: var(--fa-red); background: var(--fa-bg3); }
+.fa-panel .fa-actions { display: flex; gap: 8px; }
+.fa-panel .fa-save {
+  flex: 1; height: 40px; border-radius: 12px; border: 0; background: var(--fa-accent); color: #fff;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.fa-panel .fa-save:disabled { opacity: 0.4; cursor: not-allowed; }
+.fa-panel .fa-msg { padding: 0 4px; font-size: 12px; }
+.fa-panel .fa-msg:empty { display: none; }
+.fa-panel .fa-foot { padding: 0 4px 2px; font-size: 11px; color: var(--fa-dim); }
+
+/* drag handles on the small chart in Fomo's Position popup */
+.fa-lw-overlay { position: absolute; left: 0; top: 0; z-index: 30; pointer-events: none; }
+.fa-lw-handle {
+  position: absolute; left: 0; right: 0; height: 14px; margin-top: -7px;
+  pointer-events: auto; cursor: ns-resize; touch-action: none;
+}
+.fa-lw-handle > span {
+  position: absolute; left: 4px; top: 0; height: 14px; padding: 0 5px; border-radius: 4px;
+  font: 700 10px/14px system-ui, sans-serif; color: #fff; white-space: nowrap; user-select: none;
+}
+.fa-lw-handle.fa-lw-ghost > span { opacity: 0.75; }
+.fa-lw-handle.fa-lw-fixed { cursor: default; }
+/* our copy of the line, in a layer under the chart's canvas (candles and labels draw over it) */
+.fa-lw-back { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.fa-lw-line { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid; opacity: 0.85; }
+
+.fa-panel .fa-dim { color: var(--fa-dim); }
+.fa-panel .fa-green { color: var(--fa-green); }
+.fa-panel .fa-red { color: var(--fa-red); }
+.fa-panel .fa-blue { color: var(--fa-blue); }
+
+/* "FOMO Alerts" tab in the header of Fomo's side panels (after Feed), and its list over the panel */
+button.fa-hist-btn.fa-hist-btn {
+  flex: none; display: flex; align-items: center; gap: 4px; padding: 0; border: 0; background: transparent;
+  color: rgb(152, 153, 163); font: inherit; cursor: pointer; white-space: nowrap;
+}
+button.fa-hist-btn.fa-hist-btn:hover, button.fa-hist-btn.fa-hist-btn.fa-on { color: #f4f4f6; }
+.fa-hist-btn .fa-tg { width: 14px; height: 14px; flex-shrink: 0; }
+/* room after our tab, so the row can scroll it fully into view */
+button.fa-hist-btn.fa-hist-btn { margin-right: 8px; }
+/* our list is open: Fomo's own tabs look unselected */
+[data-fa-hist="open"] .no-scrollbar > button:not(.fa-hist-btn) { color: rgb(152, 153, 163) !important; }
+[data-fa-hist="open"] .no-scrollbar > button:not(.fa-hist-btn):hover { color: #f4f4f6 !important; }
+.fa-hist-badge {
+  min-width: 14px; height: 14px; padding: 0 4px; border-radius: 999px; background: rgb(255, 98, 46); color: #fff;
+  font-size: 10px; font-weight: 700; line-height: 14px; text-align: center;
+}
+.fa-hist-badge:empty { display: none; }
+.fa-hist {
+  position: relative; flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column;
+  color: #f4f4f6; font-size: 13px;
+}
+/* while our list is open: hide the panel's own content, keep its header and the Split bottom / right bar */
+[data-fa-hist="open"] > :not(:first-child):not(.fa-hist):not(.mx-2.mt-1) { display: none !important; }
+.fa-hist-head { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid #23222e; }
+.fa-hist-tabs { display: flex; gap: 4px; flex: 1; }
+.fa-hist-tab {
+  display: flex; align-items: center; gap: 4px; padding: 3px 8px; border: 0; border-radius: 999px; background: transparent;
+  color: rgb(152, 153, 163); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.fa-hist-tab:hover { color: #f4f4f6; }
+.fa-hist-tab.fa-on { background: #23222e; color: #f4f4f6; }
+.fa-hist-count { font-size: 10px; min-width: 14px; height: 14px; padding: 0 4px; border-radius: 999px; background: #23222e; line-height: 14px; text-align: center; }
+.fa-hist-tab.fa-on .fa-hist-count { background: #12111c; }
+.fa-hist-count.fa-new { background: rgb(255, 98, 46); color: #fff; }
+.fa-hist-tab.fa-on .fa-hist-count.fa-new { background: rgb(255, 98, 46); }
+.fa-hist-count:empty { display: none; }
+.fa-hist-list { flex: 1; min-height: 0; overflow-y: auto; padding: 0 4px; }
+.fa-hist-item {
+  display: flex; align-items: flex-start; gap: 8px; padding: 12px 8px; border-bottom: 1px solid #12111c;
+  color: inherit; text-decoration: none; border-radius: 8px;
+}
+.fa-hist-item:hover { background: #12111c; }
+.fa-hist-logo {
+  width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; border: 1px solid #23222e; object-fit: cover;
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: rgb(152, 153, 163);
+}
+.fa-hist-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.fa-hist-top { display: flex; align-items: center; gap: 6px; }
+.fa-hist-sym { font-weight: 700; }
+.fa-hist-tag { font-size: 11px; font-weight: 700; padding: 1px 4px; border-radius: 4px; }
+.fa-hist-tag.fa-green { color: rgb(33, 201, 94); background: rgba(33, 201, 94, 0.2); }
+.fa-hist-tag.fa-red { color: rgb(255, 98, 46); background: rgba(255, 98, 46, 0.2); }
+.fa-hist-tag.fa-blue { color: #4f9dff; background: rgba(79, 157, 255, 0.2); }
+.fa-hist-time { margin-left: auto; font-size: 12px; color: rgb(102, 103, 113); }
+.fa-hist-lvl { color: #f4f4f6; font-weight: 700; }
+.fa-hist-sub { font-size: 11px; color: rgb(102, 103, 113); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fa-hist-sub.fa-red, .fa-hist .fa-red { color: rgb(255, 98, 46); }
+.fa-hist .fa-green { color: rgb(33, 201, 94); }
+.fa-hist-tag.fa-green, .fa-hist-tag.fa-red, .fa-hist-tag.fa-blue { white-space: nowrap; }
+.fa-hist .fa-bin {
+  margin-left: auto; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex-shrink: 0;
+  border: 0; border-radius: 6px; background: transparent; color: rgb(152, 153, 163); cursor: pointer; padding: 0;
+}
+.fa-hist .fa-bin:hover { color: rgb(255, 98, 46); background: #23222e; }
+.fa-hist-detail { font-size: 12px; color: rgb(152, 153, 163); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fa-hist-note { margin: 0; padding: 16px 12px; color: rgb(152, 153, 163); font-size: 12px; }
+.fa-hist-note .fa-tg { width: 1.1em; height: 1.1em; vertical-align: -0.2em; }
+
+/* "FOMO Alerts" settings window, opened from Fomo's account menu: same style as Fomo's Settings window */
+.fa-menu-item .fa-tg { flex-shrink: 0; width: 16px; height: 16px; }
+.fa-set-overlay {
+  position: fixed; inset: 0; z-index: 2147483000; display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.5); padding: 16px; font-size: 16px; line-height: 1.4;
+}
+.fa-set-dlg {
+  width: 408px; max-width: 100%; min-height: 360px; max-height: 80vh; overflow-y: auto; scrollbar-width: none;
+  display: flex; flex-direction: column; gap: 24px; padding: 16px; outline: none;
+  background: rgba(6, 5, 16, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #23222e; border-radius: 24px; color: #f4f4f6;
+}
+.fa-set-dlg::-webkit-scrollbar { display: none; }
+.fa-set-title { text-align: center; }
+.fa-set-body { display: flex; flex-direction: column; }
+.fa-set-label { font-size: 12px; color: rgb(102, 103, 113); text-transform: uppercase; letter-spacing: 0.04em; padding-top: 8px; }
+.fa-set-label:first-child { padding-top: 0; }
+.fa-set-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 4px 16px 0;
+  width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left;
+}
+.fa-set-rowbtn { cursor: pointer; }
+.fa-set-rowbtn:hover { opacity: 0.8; }
+.fa-set-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.fa-set-ic { display: flex; width: 20px; height: 20px; flex-shrink: 0; color: #f4f4f6; }
+.fa-set-ic svg { width: 20px; height: 20px; }
+.fa-set-text { display: flex; flex-direction: column; min-width: 0; }
+.fa-set-text > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fa-set-sub { font-size: 12px; color: rgb(152, 153, 163); }
+.fa-set-chev { width: 16px; height: 16px; flex-shrink: 0; color: rgb(102, 103, 113); }
+.fa-set-val { font-size: 14px; font-weight: 700; text-align: right; flex-shrink: 0; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fa-set-pill {
+  flex-shrink: 0; border: 0; border-radius: 6px; padding: 4px 8px 4px 8px; background: #23222e; color: #f4f4f6;
+  font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.fa-set-pill:hover { opacity: 0.8; }
+.fa-set-rm { color: rgb(255, 98, 46); }
+.fa-set-rm.fa-set-sure { background: rgb(255, 98, 46); color: #fff; }
+.fa-set-pill.fa-set-on { color: rgb(33, 201, 94); background: rgba(33, 201, 94, 0.12); }
+.fa-set-note { font-size: 12px; color: rgb(152, 153, 163); padding: 8px 0; }
+.fa-set-ok { color: rgb(33, 201, 94); }
+.fa-set-socials { display: flex; justify-content: center; gap: 8px; margin-top: auto; }
+.fa-set-soc {
+  display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px;
+  background: #23222e; color: rgb(152, 153, 163); text-decoration: none;
+}
+.fa-set-soc:hover { color: #f4f4f6; }
+.fa-set-soc svg { width: 16px; height: 16px; }
+/* settings before Telegram is linked: shown, but greyed out and not clickable */
+.fa-set-off { display: flex; flex-direction: column; opacity: 0.35; pointer-events: none; user-select: none; }
+.fa-set-err { color: rgb(255, 98, 46); }
+
+/* unlocking with a one-time payment: same screen as Fomo's "Deposit with crypto" */
+.fa-set-dlg.fa-set-paying .fa-set-title { display: none; }
+.fa-pay { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-bottom: 8px; }
+.fa-pay-head { display: flex; align-items: center; justify-content: space-between; align-self: stretch; }
+.fa-pay-back { display: flex; padding: 4px; border: 0; background: transparent; color: rgb(102, 103, 113); cursor: pointer; }
+.fa-pay-back:hover { color: #f4f4f6; }
+.fa-pay-back svg, .fa-pay-sp { width: 20px; height: 20px; }
+.fa-pay-title { font-size: 16px; }
+.fa-pay-pick { position: relative; width: 200px; flex-shrink: 0; }
+.fa-pay-select {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  padding: 10px 8px; border: 1px solid #23222e; border-radius: 12px; background: #12111c; color: #f4f4f6;
+  font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap;
+}
+.fa-pay-select:hover { background: #1a1926; }
+.fa-pay-selval { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fa-pay-chev { display: flex; width: 16px; height: 16px; opacity: 0.5; }
+.fa-pay-chev svg { width: 16px; height: 16px; }
+.fa-pay-chain { width: 20px; height: 20px; border-radius: 4px; flex-shrink: 0; }
+.fa-pay-menu {
+  position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%); min-width: 100%; z-index: 2; display: flex; flex-direction: column;
+  padding: 4px; border: 1px solid #23222e; border-radius: 12px; background: #12111c; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.fa-pay-opt {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px; border: 0; border-radius: 8px;
+  background: transparent; color: #f4f4f6; font: inherit; font-size: 14px; cursor: pointer; text-align: left; white-space: nowrap;
+}
+.fa-pay-opt:hover, .fa-pay-opt.fa-pay-on { background: #23222e; }
+.fa-pay-optok { margin-left: auto; padding-left: 12px; font-size: 12px; color: rgb(152, 153, 163); }
+.fa-pay-tick { display: flex; width: 14px; height: 14px; color: rgb(33, 201, 94); }
+.fa-pay-tick svg { width: 14px; height: 14px; }
+/* one copy per network in the same grid cell: the window keeps its size when you switch networks */
+.fa-pay-stack { display: grid; width: 100%; justify-items: center; align-items: start; }
+.fa-pay-stack > * { grid-area: 1 / 1; }
+.fa-pay-hidden { visibility: hidden; pointer-events: none; }
+.fa-pay-textset { display: flex; flex-direction: column; gap: 4px; }
+.fa-pay-text { font-size: 12px; color: rgb(152, 153, 163); text-align: center; }
+.fa-pay-tokin { display: inline-block; width: 16px; height: 16px; border-radius: 50%; vertical-align: -3px; }
+.fa-pay-qr { padding: 4px; border: 1px solid #23222e; border-radius: 16px; background: #12111c; line-height: 0; }
+.fa-pay-qr svg { width: 200px; height: 200px; }
+.fa-pay-copy {
+  display: flex; align-items: center; gap: 8px; max-width: 268px; padding: 12px; border: 1px solid #23222e; border-radius: 12px;
+  background: #12111c; color: #f4f4f6; font: inherit; font-size: 12px; cursor: pointer; text-align: left;
+}
+.fa-pay-copy:hover { background: #23222e; }
+.fa-pay-addr { overflow-wrap: anywhere; }
+.fa-pay-amtbtn { padding: 8px 12px; font-size: 14px; font-weight: 700; }
+.fa-pay-copyic { display: flex; width: 16px; height: 16px; flex-shrink: 0; color: rgb(102, 103, 113); }
+.fa-pay-copyic svg { width: 16px; height: 16px; }
+/* waiting text or the latest message, always the same room (two lines) */
+.fa-pay-status { display: flex; align-items: center; justify-content: center; min-height: 34px; font-size: 12px; text-align: center; color: rgb(152, 153, 163); }
+.fa-pay-wait { color: rgb(33, 201, 94); font-weight: 600; }
+.fa-pay-check {
+  align-self: stretch; border: 0; border-radius: 12px; padding: 10px; background: rgb(33, 201, 94); color: #06050f;
+  font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.fa-pay-check:hover { opacity: 0.9; }
+
+/* a short note in the bottom-right corner (referral list sent, pairing) */
+.fa-toast {
+  position: fixed; right: 16px; bottom: 16px; z-index: 2147483647; max-width: 360px; padding: 12px 14px; border: 1px solid #23222e;
+  border-radius: 12px; background: #12111c; color: #f4f4f6; font: 500 13px/1.4 system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); cursor: pointer;
+}
+.fa-toast-ok { border-color: rgba(33, 201, 94, 0.5); }
+.fa-toast-err { border-color: rgba(255, 98, 46, 0.6); }
+
+/* badges in front of your Fomo username: top 1, 2, 3 or 100 holder among FOMO Alerts users, or the verified check */
+.fa-badge { display: inline-block; height: 14px; vertical-align: -2px; margin-right: 4px; background: center / contain no-repeat; flex-shrink: 0; }
+.fa-badge-1, .fa-badge-2, .fa-badge-3 { width: 21px; }
+.fa-badge-100, .fa-badge-user { width: 14px; }
+.fa-set-val .fa-badge { height: 20px; vertical-align: -5px; margin-right: 5px; }
+.fa-set-val .fa-badge-1, .fa-set-val .fa-badge-2, .fa-set-val .fa-badge-3 { width: 30px; }
+.fa-set-val .fa-badge-100, .fa-set-val .fa-badge-user { width: 20px; }
+.fa-badge-1 { background-image: url("data:image/png;base64,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"); }
+.fa-badge-2 { background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAAAwCAYAAACynDzrAAALT0lEQVR4nO2Ze5BT1R3Hf+fegDvsLrug4lRFkynF+hjJTkHqWNwbRR2KlERFxgduYi0OFdykuJQtj73RIg/BBCyiaJusoFaB7m4pUqBjsj5KKepmBYoMne5aH62ikjCLi7u59/R7b3bDhs1rH4n80c/ML+d7kvs495vfufeccxl9i7QcDhg7OqiccZKIyEhnwijEGA8ailmjyWQJ45u8wxB553BTQOKqWskYWVHNCCcKw8R6EgT35WWWVsojeTfo4P5dHpzWCdlnNKNEJjiuGD+5HtW8kFeDQn/7cxNOaIYcEIxzx9XXTvFTHkB788O7b+/w4WR2GiRwrLKy66aGIHMKzpN73nlju1UlqoPMRCNCoxyRieA110+zoMwpDJFz9gbqW1AYKSk8gg/ntRabn3qwN1AnEZEXTRyHMiki8bJrLLYQZM5giJzydqDOzBXeBJmMCBOZdF2Ki2wK1JWeVLj226WI3jDm+tGNNi9Uzsi5QY27t3qJ80rIZLjLb5khUxre2LXVyonXQSajEftLlEMSDDr1xaHjoiiGDAbRzYq/F6RB4PXXXglSinsKY0NNlim2VkpDAFnE2zuOQyaj8YYfz5RoEODtLcboN9/4FIVLgqKWDR11ZQhfnzboeEuTURV5iygKpIcgeIeNusqFnwbE7u0vBSmFQTdPuzt+/nTgGBxFMhpxDIkGSPuxQzVRRZUVVSVVUUiJKpbzTROCBOINbDn8poRBWAAZ1G0QSjE4oqjUxkaYwtikX+ys2xREqpRDJsKpeYrtXjNURnbWb+YoesN54xTbLIkGwJcfN/lURbXrxsAgRVEpGlXcpisnyQTiBh18d48TBnl0c7QQuowShfoLx/zQhk2+FV6r22RVVbUOsjeMam+9rcJO/eSTo/tkzpUazZR4qDAqqrqvnHCTTIAhdPY1NsjImBoEwRQYhNBK1A0GwWa64vp6bJZ3/viqL8BJn8z2Ao13/OROh5/6Qcuht82K0tnUnTWKlkFaiXo0GnVPLJ8uE8A5YgR2viLDDBgkkIDokUEkMLH16ok3m7BZXtn28m/t6Ec+Sk5EKBCNNpsjDN1nDu7fHYAhkm4MTIGOhZ5BitsyZaZMgCF0/rTtBacoMnQxGIPs0U3SI1YfMsTg+MF1U/2UJ7a+9KxV5alH3xxDhJn3PChTP2jauxPLLB0tuiFa6AbBmC6t3YOm3V4hE4gbtGXTBomJhoBuCgzRjYHWjUJdEMUGyy0zrNg057z8wgY7EfkQqfiwoLjA3N/sady1RYYRNbohmjEwJUHjHjRzVsz8uEE+n8coKGKLZkrP7tWtmSiEb7XdNwKb5pQXfesrMTD0QqYiwohJ9zgeCkH3C9z4g+hK5TFTEJopmjnQeKKRwqMWx89cQQJxgzSeXrcqDDNKtIzpzqCY1kKkGffMTth+sPE/vy7jjB9/lW3WA/PqIfvNlhc3HocppZohujEwSDdG0yjxYZrjqm4lgPac5onlbr9oECq6s0aPntogWGY55gVpkEH2liodFEBjzKimIoL/ytr9zw4E/3PrODIIPvQwBiZpdUTzIwuXxtuBNp1GlhdLmCEHdDOQMXqJVukl6oIgWObMqwrSILJxo8dMUX2cY6TURMggSLNnu0LQA2b92pVY8dXNQMAcrdTrCqlcdS2Vl3uxmQ47eiAgERemC4zCqNOe4D7rR58eM8dMQfTIoCEF55hcXak3GDz71GormuRjRKWopoA1FxQZJIfDFUZlUEBP4ZoZMVO0iOkLzh/ZdsOk8csKzhl6DufcSMQb2IH9u2Q0sIZ68E1HJ/3jSAsdOfoRdlR0c7QMcj+2ApsODuvXrqjkXFvvSQPntYVU4HS4Bs8cDXnJwhCMGaddG0q6bMwldPlYIxUXDcOvPeBUy/a/uV3CVQdQ7UXbya/pr/sP0rEvw5pBzavXeM34esCsW7PMxyn9zRi4K+cvkikHVD3irMdgcHrJ8CK6dvxVNHLEcHzbG4b1JhZblFKPo56S3cF9dOyLE7UbnnnGTgPA4/GU8s62AM9wM8azyjl/wSI/5YiH5sxxDi8e5rlJmkBDhw7BN8nB0KYMyYP7zo6XgxDlkEnpQJd778CRmsVLlz2Kar9YtUo2k6KPjI2Umg9JJOuCBXIIOmdUV1dNmlj2/TeKCs/oUolEJk+9q5RBYJrhc8IvD2RKcNM6MO0Ox9WQfWbl47IVjw0fT3szpuaCQkFyueQwdE7Zsc1fh7ZYIVPDOFYKHHbdoLo6X6nS3tlKRCWIlOBNqOP2u2b7qQ8se3SJnXPVB5keRkHqB8hqC4qsqXt1o1mJUhNkWkQDldnunB1i0Dqbf/cbPxFVINLReu/9c00os8a9tDpIabrvQKl5dDlDkTXZXCemOo2z7p8nEYgf3KeNZk/xVsqQRZjxlzn6MGBbsnhBEGcsh8wJjy1bFb+GbHh+w5McRVp6XmPCwdd7ltuxtw8yDYJrruuXXois+NXCR4KUwwx6fMXqhGtIx9OelXiBqY/aU4KDrX3IVe2E1EE9kdUr3F4UlYikYIeG+QtrrJBZsbDKFeQ5NGjlEx40KTswgpZxH62BTAoO1Ova8F0i2tuN94/+03/eyJJyAdOM0pIiDBjbqa3tJH30yed0tOXjA/MXLMn6aVY13+nlnMyQOWH1k16JsuTX7kX1Y797yfTRF11A551bSueOLKHPP/8KswWVvjoe+WDUqNLZl42b/CY2jZNg0KF3/uJF/6vEqBlzMG16oUVM6wtnWghYoxZFuaigaO1A3nbkm7b/Hqj8uv3UGlyP2D3FiEdXPTazV0NXjJ9chl10Egx6a882J4zwdBsB3WUKQjOqhxZEFi4YOsQyynRNCLuetaBHlLZ1tAeQJeaYATADGQMjYtFlTiwULCzw2usn32anLhIM0ti+rbYVRlzabQR0lylaJNaZKIYLDEMsY8ssZ6VJLU2B0pPRzgAu3hwzpcsM6N5maVqJiIybp9gcrdRFL4M2PfeUxAzaC0SY0GWEbkyXxtp0XOshiK2FeCyWWWxh7H5W8dbrfwioUby50E2AAboRiJ5Zg9/0l4a65q77fjrXi13j9DJIY+2aZbLBYKjpNkLvauhymtYjQWsh1k+9/T4bdj1r2FFXK+M9e4124WqCIT20FqfrDQ//otqKXRNIapDGY/IiP1YQK3QTtNCM0LInrgU84YqpcFgBDS8uxIKfsHj06It3XDz2270n/adlr/GLYycmhiNtv8dNmSIn2iiMgAEILM8hY2IacdqcZoWGSLIsh3GIBFIapDHf9bAfRsCk08ZoZpguuZDGmEYT3pVhq0Q4UVjAsi/Mrc3XvelwU8CIK6+AtBORkc6gszNKn352jA598C860fY1DIkZEzOLNxepJMlebxib9oIh0vLAA/c7YQyebCJhDEETzJenXUM5gyDO4J4waVqQcoC+2MdZBeZOdsqS5kNH6b33j8AYGMTVtYWFCrzxJzVHI6NBGna73XjjpPF7LvrO+WNQ7Q8hjGC9eJ1bCz1gAju3SFh+qUG+StQPPv70s3/vDv69YvPmzUHKAENkpGGrz4u+k3L60Qfc02c4ZBoA27f60r6SzhbOyG+9w+GATAtDZOQl39MhpPE4yH7DiNXe7fi5nQYBvH21U8ZJdUYiw2iY0eZwpOxeGlkZpC2FnGqLOtFNalDtKxGcRH5wbpUXetDY8NQTEtpTD1mC6BOcqLag0ODM5lUS2p49nuXLjRiMy8R4BaoZ4ZwaMW9zuhYsCqE66GgvAZRTbd5s24OLbVA581ZVLwlSlmCfviPLcikpp6yQVvwdEu/xL+KAzSiCZCCvLK9opTwgywuNFNUf8VpbylHqoC0RfAShgiTy+v60B8f4P+n4H/jALUh0di41AAAAAElFTkSuQmCC"); }
+.fa-badge-3 { background-image: url("data:image/png;base64,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"); }
+.fa-badge-100 { background-image: url("data:image/png;base64,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"); }
+.fa-badge-user { background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFsElEQVR4nO2a308UVxTHz9LugrVlx/LQSmikD/KApLuUJoIJFR6gJpKI1tr2qWricyH+ASx/gIE+k6p9aptaxQQTCw/QmpQ1KXWxyoN9AKNR+wCdxTbCbrrb77n7a+bO3NlZZtiUpJ9kZs7dGOZ87z3n3HN3DdAO538BMrW12ufZLEVhRin35LckcE8E8Nzc1L+A7Ru+Cdgd1KLpAF0qOq0CIoJZOvN3Wk9g5BlfBIRC2ggcj1ElBCiWSumjsDwRwFUxdXVaMxHty2SoB38gipAZxNhCw94u3IlWn87jbgUhNZlFaNXU0BwRPdzY0FeoQvB+d7DT2QyNwdkeItJw2RIM1VOkZ5ze2HcEoxJ/PLxJi3NDlE6tY6REh6i5QA0NuxXjSoBIzIwIEaXjTH3DAeocuAIRYYyspFNJik+dpPXV+xg5okNEzE3ClxVQG9KuYdYHYTryZvMH9M7hcaXzBVjE3R+H6NnKDxg5g9WY3Ezpx2EqcRSAmR/CzI/BLMIh0tDYhdluw4ho16tNsA/gyo3dsr56D9d9evHXY4xy49Un8xBoDjGsxDBWYhymLUoBHPOZf+gOTA2XgJMyglne9dpbGPnPi+ePaBGrIyW9XvMStatyQikAoTOJ0DkGU8DOdw58D2v7iU99aBKBULqOUBqEaUEpIBTU/sRDwyXCpvvEzLbNvAyvxK2rfcZw0lNpfQ+eFmwF5MNnGaaAE7Sj7xKs6rEwc8aU6K/spj06gGlCJaAHAmZhClo6ztP+d8/Dqh6//3qBHixcgJUDedCLPJgjCVsBaA1iaA1GYAr+CwLg6ShajxhJ2ApAAptqf+TwGDW1fAyrejx+8C0q0jCsHEhk2z3BIkCefab7xHTFdd4Jbit4D2jaf0pZGHhfuHW1H1YJuz3BJEC0xCRqfxG/E3gpPkLLv03AQnWrDVPvJ3FUuTBGVuREZoJE7cZW3CQAs38Hsx+FKeAd1qm3qZS7CIlHCA0jrV2j9HbbOVhWuO2w9E44TyAX2mEJigLktoFrf++nt/EMY+QdO+cZJwEMi5j9+iCexT3BFEpFAZj9y5j9z2AK3uu/aGmJ7eAXPF9dEj2RKp5Vzje1nEKBEH44wjnzy/RZWHkC9BVW4TQBowBT+Bw99wR3Z9j521MfURIJx/Hc2hmDU+Zq5dX5AjcmGnHPYwijkoCglsVD4LbvWb43QUvzI7BKGEuuX84zcn+E1kL4Lm6MXwIYFrH2NO6b80x5ASEtgRCKwBS4DSFLlXBgq84zUggtIoSisGDmgYAtJ7EbEV6cd5XEljKKpHTaZIyUE+HFef7bs990UnoziVEO2zLKYBVMYRRG+3Bw4DtPIrw6X6hyRQzhw5gE2LcSR9BKXIRVHn6hUYQX55mFmbP0bOUmrBJBp1aCwSrEsAojMItU0syxiDVUi5exkzfsPYRPtsaWmrkCaKdN52Eui4XaXi1s2mnbc7GtAHkVdtyBZscfKSGgGQKWYQr8PhO4QT4LVHSoZ9Ba8D8O4xJ7QvfxaWW36Tfia5Vr/cban0TroOFpQSlATuSGxkPUefQKrO0nfuMkvmb8GVYOVQIzSgH5MErADOMSsIjI+2PbthI884s/DZucB0nEfxTxv0I2KAUwcnvBcDhxt8rHTYbF1L/einEbRu7hOr++tiScZnjz427TEDYCu9pvxFEAI4eSCl6djr4vy7YdvNHxOUHeYW0xNG0qygpg8isRI0M42VGud2LnLb2NPUnMPP/AoZz5Aq4EMJwTEDGO1egh+IrLFg4x3rnlVpxbYt5Z5RCRSCJh5+D8kCrmZVwLMKKBjQ2KGn7kO4aPLXBYMVJSFoGz17P5H/nq6iihA3xcEXi/d/IhNgbTNZhlx+R0iy8CGNGKB+gyeqgIhmrQzwezdNrYEnvBNwEFxGrkvp6JFsXAadwTCBn+rwbjsH3DdwHVZscL+Bdb4NlP1s4+egAAAABJRU5ErkJggg=="); }
+
+/* a take profit / stop loss on a coin you sold completely: paused, greyed out (it comes back when you hold the coin) */
+.fa-panel .fa-alert.fa-alert-off { opacity: .5; }
+.fa-panel .fa-alert-off .fa-tag, .fa-hist-item.fa-off .fa-hist-tag { filter: grayscale(1); }
+.fa-panel .fa-alert-paused { font-size: 11px; color: var(--fa-dim); }
+.fa-hist-item.fa-off { opacity: .55; }
+
+/* chain filter next to Fomo's search bar: green = shown, grey = hidden (see content.js) */
+.fa-cf { display: flex; align-items: center; gap: 2px; height: 48px; margin-top: 4px; flex-shrink: 0; }
+.fa-cf-chain {
+  display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: #21c95e; cursor: pointer; transition: color 0.15s, opacity 0.15s, transform 0.15s;
+}
+.fa-cf-chain:hover { transform: translateY(-1px); }
+.fa-cf-chain svg { display: block; width: 22px; height: 22px; }
+.fa-cf-chain.fa-cf-off { color: #474b52; opacity: 0.7; }

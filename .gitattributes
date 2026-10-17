@@ -1,0 +1,3 @@
+# Keep every file byte for byte as it is in the Chrome Web Store: no line-ending changes on Windows (Git's
+# core.autocrlf), so verify.js compares the same bytes on every computer.
+* -text
