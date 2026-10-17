@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "FOMO Alerts",
-  "version": "0.9.6",
-  "description": "Take-profit and stop-loss alerts for fomo.family, sent to your Telegram. It never trades for you.",
+  "version": "0.9.7",
+  "description": "TP/SL alerts for fomo.family: reads your positions there; our server (fomoalerts.family) watches prices and messages your Telegram.",
   "permissions": [
     "storage"
   ],

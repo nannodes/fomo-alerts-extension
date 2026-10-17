@@ -43,6 +43,20 @@ Your private key stays with Privy, Fomo's wallet provider, in its own isolated p
 - **Only our two receiving addresses.** The payment screen shows only the two addresses built into [`content.js`](extension/content.js) (`PAY_TO`), whatever the server sends.
 - **Copies can't use our server.** It only answers the official extension (by its ID) and our website.
 
+## What security scanners report, and why
+
+Automatic extension scanners look for code patterns that malware also uses. Each one that appears in FOMO Alerts:
+
+| A scanner may report | What it is here |
+|---|---|
+| Runs inside the page ("MAIN world"), wraps `fetch` | [`page-hook.js`](extension/page-hook.js) reads answers that Fomo's own page already gets from Fomo's API (`prod-api.fomo.family` only). That's how the extension knows your positions. It never reads request headers or login tokens, and never sends requests of its own. |
+| `MutationObserver` that adds UI | Fomo redraws its pages without reloading them. The observer puts the alerts card back under the Buy/Sell box. |
+| Network requests | Only [`background.js`](extension/background.js) talks to a server, and only to fomoalerts.family. Nothing runs on a timer. The extension asks when you open a coin, when you come back to the tab, when you use the card, or when the chart's price reaches one of your levels. It checks every few seconds only while you wait for something you started: linking Telegram or Discord, or a payment. |
+| Timers | One timer re-sends your alert lines to the chart script on the same page every 4 seconds. Nothing leaves the page. |
+| Error reports | When something breaks, a short report goes to fomoalerts.family: what went wrong and where, with no account data. |
+
+The extension never loads or builds code while it runs: no `importScripts`, `eval` or `new Function`. Everything it runs is listed in [`manifest.json`](extension/manifest.json).
+
 ## Files
 
 | File | What it does |
@@ -51,7 +65,7 @@ Your private key stays with Privy, Fomo's wallet provider, in its own isolated p
 | `extension/page-hook.js` | Reads Fomo's API responses inside the page (exact host only) |
 | `extension/chart-bridge.js` | Draws your alert levels on Fomo's charts |
 | `extension/content.js` | The alerts card, the settings window, the payment screen |
-| `extension/background.js` | The only part that talks to the FOMO Alerts server |
+| `extension/background.js` | The only part that talks to the FOMO Alerts server (its address is at the top) |
 | `extension/rules.js` | How it finds Fomo's boxes and data (built in and frozen) |
 | `extension/vendor/qrcode.js` | QR code library (MIT license, Kazuhiko Arase) |
 | `verify.js` | Compares the Chrome Web Store version with this code |

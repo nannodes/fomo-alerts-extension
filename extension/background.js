@@ -1,8 +1,10 @@
 // © 2026 FOMO Alerts. All rights reserved.
-// Service worker: the only part that talks to your FOMO Alerts server.
-// The server URL lives in config.js. What's stored: the random client id the server gave this browser for the Fomo
-// account that's logged in, and the ids of other Fomo accounts used in this browser (see "one id per Fomo account").
-importScripts('config.js');
+// Service worker: the only part that talks to the FOMO Alerts server, and it talks to nothing else.
+// What's stored: the random client id the server gave this browser for the Fomo account that's logged in, and the
+// ids of other Fomo accounts used in this browser (see "one id per Fomo account").
+
+// our server (fomoalerts.family). For a local test server, change it only in a copy of this folder.
+const SERVER_URL = 'https://fomoalerts.family';
 
 const norm = (a) => (a && a.startsWith('0x') ? a.toLowerCase() : a);
 

@@ -66,8 +66,6 @@
     if (/Extension context invalidated/i.test(msg)) return;
     report({ kind: 'crash', where: 'page (async)', msg, stack: err && err.stack });
   });
-  // setInterval that stops doing anything once the extension is gone
-  const every = (fn, ms) => setInterval(() => safe(fn), ms);
   dbg('extension', `v${VERSION} started on ${location.pathname}`);
 
   // How Fomo's boxes and data are found: built into rules.js (see there)
@@ -359,6 +357,7 @@
       const prev = shared.live.get(norm(payload.address));
       shared.live.set(norm(payload.address), { price: payload.price, at: Date.now() });
       if (!prev || prev.price !== payload.price) renderAll();
+      if (payload.price > 0) followUpLevels(payload.address, payload.price);
     } else if (type === 'dragging') {
       onChartDragging(payload.target, payload.key, payload.id, payload.price);
     } else if (type === 'moved') {
@@ -484,6 +483,20 @@
       return peak > 0 ? peak * (1 - a.pct / 100) : a.price;
     }
     return a.price;
+  }
+  // The chart's price just reached an alert's level: the server (it checks prices every 15 seconds) has probably sent
+  // that alert, so the card asks for its alerts a little later, instead of asking all the time
+  const levelsFollowedUp = new Set(); // alert ids
+  function followUpLevels(address, price) {
+    for (const p of panels) {
+      if (norm(p.tok.address) !== norm(address)) continue;
+      for (const a of p.alerts) {
+        const level = alertLevel(a, price);
+        if (!(level > 0) || levelsFollowedUp.has(a.id) || (a.kind === 'tp' ? price < level : price > level)) continue;
+        levelsFollowedUp.add(a.id);
+        for (const ms of [20000, 60000]) setTimeout(() => safe(() => panels.has(p) && loadPanel(p)), ms);
+      }
+    }
   }
 
   // % between a level and the current price, positive in the side's direction
@@ -1380,7 +1393,6 @@
   // ---------- "FOMO Alerts" tab in Fomo's side panels: active alerts and the alerts that were sent ----------
   // Fomo has up to 4 side panels, each with a header of tabs [Alerts | Tokens | Leaderboard | Feed]. Every
   // panel gets a "FOMO Alerts" tab after the last one; it shows our list over that panel's content.
-  const HISTORY_POLL_MS = 60000;
   const hist = {
     panes: new Set(), // one per Fomo panel: { root, header, row, btn, sep, view, open, tab, autoTab }
     items: [], // sent alerts, newest first
@@ -1754,9 +1766,6 @@
     for (const h of hist.items) body.append(historyItem(h));
   }
 
-  every(() => {
-    if (hist.panes.size && !document.hidden) refreshHistory();
-  }, HISTORY_POLL_MS);
 
   // ---------- "FOMO Alerts" in Fomo's account menu: our settings (Telegram accounts, referral, access) ----------
   // Looks like Fomo's own Settings window: a centered title and plain rows, one icon each.
@@ -2734,7 +2743,8 @@
   };
   const start = () => {
     dbg('extension', 'Page loaded, looking for the Buy/Sell box');
-    new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
+    // Fomo redraws its pages without reloading them: when it does, put our cards and tab back in place
+    new MutationObserver(schedule).observe(document.body || document.documentElement, { childList: true, subtree: true });
     safe(ensure);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
@@ -2742,17 +2752,21 @@
   window.postMessage({ source: 'fomo-alerts-content', type: 'ping' }, location.origin); // page hook answers "hello"
 
   // send every card's lines again now and then, so the chart side can never stay out of step
-  every(() => {
+  // (nothing leaves the page: it's a message to chart-bridge.js on this same page)
+  setInterval(() => safe(() => {
     for (const p of panels) if (p.lastChart) postChart(JSON.parse(p.lastChart));
-  }, 4000);
+  }), 4000);
 
-  // refresh link status / alerts when coming back to the tab, and now and then so alerts that fired
-  // (or were changed in Telegram) update by themselves
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden || !extAlive()) return;
+  // Alerts, link status and sent alerts are fetched from our server when something happens, never on a timer: when a
+  // card opens, when you come back to this tab or window (alerts may have fired or been changed in Telegram), and
+  // shortly after the chart's price reaches one of your levels (followUpLevels)
+  let refreshedAt = 0;
+  const refreshAll = () => {
+    if (document.hidden || !extAlive() || Date.now() - refreshedAt < 2000) return;
+    refreshedAt = Date.now();
     for (const p of panels) loadPanel(p);
-  });
-  every(() => {
-    if (!document.hidden) for (const p of panels) loadPanel(p);
-  }, 30000);
+    if (hist.panes.size) refreshHistory();
+  };
+  document.addEventListener('visibilitychange', refreshAll);
+  window.addEventListener('focus', refreshAll);
 })();
