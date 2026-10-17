@@ -1,3 +1,4 @@
+/* © 2026 FOMO Alerts. All rights reserved. */
 /* FOMO Alerts card, styled to sit under Fomo's Buy/Sell box */
 .fa-panel {
   position: relative;
@@ -318,6 +319,7 @@ button.fa-hist-btn.fa-hist-btn { margin-right: 8px; }
 }
 .fa-set-soc:hover { color: #f4f4f6; }
 .fa-set-soc svg { width: 16px; height: 16px; }
+.fa-set-copy { margin-top: 10px; text-align: center; font-size: 11px; color: rgb(152, 153, 163); }
 /* settings before Telegram is linked: shown, but greyed out and not clickable */
 .fa-set-off { display: flex; flex-direction: column; opacity: 0.35; pointer-events: none; user-select: none; }
 .fa-set-err { color: rgb(255, 98, 46); }

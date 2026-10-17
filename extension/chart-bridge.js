@@ -1,3 +1,4 @@
+// © 2026 FOMO Alerts. All rights reserved.
 // Runs inside the fomo.family page. Draws alert levels as draggable lines on Fomo's charts and tells the
 // extension while and after you drag one. Every line has an id from the extension:
 //   new-tp / new-sl / new-dip  = the level being typed in the card (dashed "drag to set" until filled in)

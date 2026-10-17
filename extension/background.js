@@ -1,3 +1,4 @@
+// © 2026 FOMO Alerts. All rights reserved.
 // Service worker: the only part that talks to your FOMO Alerts server.
 // The server URL lives in config.js. What's stored: the random client id the server gave this browser for the Fomo
 // account that's logged in, and the ids of other Fomo accounts used in this browser (see "one id per Fomo account").
@@ -81,7 +82,8 @@ self.addEventListener('unhandledrejection', (e) => report({ kind: 'crash', where
 // /api/alerts/abc123… -> /api/alerts/:id, so the same failing request groups together
 const routeOf = (path) => String(path).split('?')[0].replace(/\/[A-Za-z0-9_-]{12,}|\/-?\d+/g, '/:id');
 
-async function rawApi(path, { method = 'GET', body, asClient } = {}) {
+// cookies: send our site's cookies along (only for /api/site-link, see siteLink below)
+async function rawApi(path, { method = 'GET', body, asClient, cookies } = {}) {
   const config = await getConfig();
   const serverUrl = config.serverUrl;
   const clientId = asClient || config.clientId;
@@ -97,6 +99,7 @@ async function rawApi(path, { method = 'GET', body, asClient } = {}) {
         'X-Ext-Version': chrome.runtime.getManifest().version,
       },
       body: body ? JSON.stringify(body) : undefined,
+      ...(cookies ? { credentials: 'include' } : {}),
     });
   } catch (e) {
     logServer(`${method} ${serverUrl}${path} → cannot reach server (${e.message})`);
@@ -205,29 +208,33 @@ function tellTabs() {
   });
 }
 
-// ---------- Telegram linked on the website ----------
-// fomoalerts.family saves its Telegram link in the cookie below. If this browser linked Telegram there (for
-// example in the demo, before installing the extension), the extension takes that link over: no second link.
-const SITE_COOKIE = '__Host-fa_client';
-// Someone's invite link (fomoalerts.family/i/<code>) leaves the code in this cookie on our site (or on the fomo.family
-// address as ?fa=, which content.js saves). It's kept once (the first one) and sent with the profile, so the server
-// knows who invited this person.
-const INVITE_COOKIE = '__Host-fa_inv';
+// ---------- Telegram linked on the website, and invites ----------
+// fomoalerts.family keeps two cookies in this browser: its Telegram link (__Host-fa_client: if this browser linked
+// Telegram there, for example in the demo before installing the extension, the extension takes that link over, so
+// nobody links twice) and someone's invite (__Host-fa_inv, from fomoalerts.family/i/<code>). The extension can't
+// read cookies itself (no "cookies" permission): Chrome sends our site's cookies along with this request to it, and
+// our server answers with what they say. Asked at most every 30 seconds.
+let siteAsk = { at: 0, answer: null };
+function siteLink() {
+  if (!siteAsk.answer || Date.now() - siteAsk.at > 30000) {
+    siteAsk = { at: Date.now(), answer: rawApi('/api/site-link', { cookies: true }).catch(() => ({})) };
+  }
+  return siteAsk.answer;
+}
+// Someone's invite link leaves the code in our site's cookie (or on the fomo.family address as ?fa=, which content.js
+// saves). It's kept once (the first one) and sent with the profile, so the server knows who invited this person.
 async function invitedBy() {
   const { invitedBy: kept } = await chrome.storage.local.get('invitedBy');
   if (kept) return kept;
-  if (!chrome.cookies || !/^https:\/\//.test(SERVER_URL)) return null;
-  const c = await chrome.cookies.get({ url: SERVER_URL + '/', name: INVITE_COOKIE }).catch(() => null);
-  const code = c && /^[A-Za-z0-9]{4,16}$/.test(c.value) ? c.value.toLowerCase() : null;
+  const { invite } = await siteLink();
+  const code = typeof invite === 'string' && /^[A-Za-z0-9]{4,16}$/.test(invite) ? invite.toLowerCase() : null;
   if (code) await chrome.storage.local.set({ invitedBy: code });
   return code;
 }
 let lastAdoptTry = { id: null, at: 0 };
 async function adoptWebsiteLink() {
-  if (!chrome.cookies || !/^https:\/\//.test(SERVER_URL)) return false; // the cookie only exists on the live site
-  const cookie = await chrome.cookies.get({ url: SERVER_URL + '/', name: SITE_COOKIE }).catch(() => null);
-  const webId = cookie && cookie.value;
-  if (!webId || !/^[A-Za-z0-9_-]{20,64}$/.test(webId)) return false;
+  const { client: webId } = await siteLink();
+  if (typeof webId !== 'string' || !/^[A-Za-z0-9_-]{20,64}$/.test(webId)) return false;
   const { clientId } = await getConfig();
   if (webId === clientId) return false;
   // a website link that wasn't finished yet: don't ask the server again for 30 s
@@ -243,41 +250,14 @@ async function adoptWebsiteLink() {
   logServer('Telegram link taken over from fomoalerts.family');
   return true;
 }
-// ---------- rules and texts from our server (only data: see rules.js) ----------
-const CONFIG_EVERY_MS = 30 * 60_000;
-let configLoading = null;
-async function refreshConfig(force) {
-  const { extConfig } = await chrome.storage.local.get('extConfig');
-  if (!force && extConfig && Date.now() - (extConfig.fetchedAt || 0) < CONFIG_EVERY_MS) return extConfig.config;
-  if (!configLoading) {
-    configLoading = rawApi('/api/ext-config')
-      .then(async (r) => {
-        const config = { rules: (r && r.rules) || {}, texts: (r && r.texts) || {} };
-        const same = extConfig && JSON.stringify(extConfig.config) === JSON.stringify(config);
-        // only a real change is written (content.js redraws on a change)
-        if (same) await chrome.storage.local.set({ extConfig: { ...extConfig, fetchedAt: Date.now() } });
-        else await chrome.storage.local.set({ extConfig: { config, fetchedAt: Date.now() } });
-        return config;
-      })
-      .catch(() => (extConfig && extConfig.config) || {}) // server not reachable: keep what we have
-      .finally(() => (configLoading = null));
-  }
-  return configLoading;
-}
 
 chrome.runtime.onInstalled.addListener(() => {
+  // versions up to 0.9.4 kept "rules and texts" from our server here; nothing can be changed from outside any more
+  chrome.storage.local.remove('extConfig');
   adoptWebsiteLink().catch(() => {});
-  refreshConfig(true).catch(() => {});
 });
-chrome.runtime.onStartup.addListener(() => {
-  adoptWebsiteLink().catch(() => {});
-  refreshConfig().catch(() => {});
-});
-if (chrome.cookies) {
-  chrome.cookies.onChanged.addListener(({ cookie, removed }) => {
-    if (!removed && cookie.name === SITE_COOKIE && SERVER_URL.endsWith('//' + cookie.domain)) adoptWebsiteLink().catch(() => {});
-  });
-}
+// (a link made on the website later is taken over the next time the status is asked: see getStatus)
+chrome.runtime.onStartup.addListener(() => adoptWebsiteLink().catch(() => {}));
 
 async function getStatus() {
   try {
@@ -358,10 +338,6 @@ async function handle(msg) {
     case 'prefs':
       // the quick % buttons from the card's settings, so the Telegram bot offers the same ones
       return api('/api/prefs', { method: 'POST', body: msg.prefs });
-
-    case 'config':
-      // rules and texts (see rules.js): fetched from our server at most every 30 minutes, kept in storage
-      return { config: await refreshConfig() };
 
     case 'pay':
       // one-time payment: msg.start opens this browser's payment ($10, from its Fomo wallet); without it, is it paid yet

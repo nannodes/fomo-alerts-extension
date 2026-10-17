@@ -1,3 +1,4 @@
+// © 2026 FOMO Alerts. All rights reserved.
 // Adds a "TP / SL alerts" card under the Buy/Sell box on fomo.family coin pages and in Fomo's Position popup,
 // and keeps the take profit / stop loss / buy-the-dip lines on Fomo's charts (drawn by chart-bridge.js) in sync.
 // Every level is its own alert (several dips, partial take profits, …). The card's fields set new alerts; the
@@ -69,20 +70,9 @@
   const every = (fn, ms) => setInterval(() => safe(fn), ms);
   dbg('extension', `v${VERSION} started on ${location.pathname}`);
 
-  // How Fomo's boxes and data are found, and our texts: data in rules.js, updated from our server (see there)
+  // How Fomo's boxes and data are found: built into rules.js (see there)
   const RX = self.__faRules;
   const rule = () => RX.rules;
-  // after our UI is drawn, put changed texts on it (before the browser shows it; nothing to do without changes)
-  const TEXT_ROOTS = '.fa-panel, .fa-hist, .fa-hist-btn, .fa-menu-item, .fa-set-overlay, .fa-toast';
-  let textsQueued = false;
-  function queueTexts() {
-    if (textsQueued || (!RX.exact.size && !RX.templates.length)) return;
-    textsQueued = true;
-    requestAnimationFrame(() => {
-      textsQueued = false;
-      for (const el of document.querySelectorAll(TEXT_ROOTS)) RX.translate(el);
-    });
-  }
   const SIDES = ['tp', 'sl', 'dip'];
   const DIR = { tp: 1, sl: -1, dip: -1 }; // take profit is above the price, stop loss and buy-the-dip below
   const GREEN = '#21c95e';
@@ -162,16 +152,6 @@
 
   // ---------- stored state ----------
   chrome.storage.local.remove('me'); // replaced by fomoUser
-  // ----- rules and texts from our server (rules.js; background.js fetches and keeps them) -----
-  function applyConfig(cfg) {
-    RX.set(cfg || {});
-    if (RX.problems.length) report({ kind: 'config', where: 'rules from the server', msg: 'Ignored: ' + RX.problems.join(', ') });
-    // the page-world scripts (page-hook.js, chart-bridge.js) use the same rules
-    window.postMessage({ source: 'fomo-alerts-content', type: 'rules', payload: cfg || {} }, location.origin);
-    renderAll();
-    if (sett.overlay && sett.overlay.isConnected) renderSettings();
-  }
-  chrome.storage.local.get('extConfig', (d) => applyConfig(d.extConfig && d.extConfig.config));
   // someone's invite link brought this person here: fomo.family/…?fa=<code>. Kept once (the first one);
   // background.js sends it with the profile.
   try {
@@ -184,7 +164,6 @@
   } catch {
     /* no address to read */
   }
-  setTimeout(() => send({ type: 'config' }), 0); // background.js looks for newer rules (at most every 30 minutes)
 
   chrome.storage.local.get(['fomoUser', 'manualHandle', 'positionsCache', 'settings'], (d) => {
     if (!shared.user) shared.user = d.fomoUser || null;
@@ -206,7 +185,6 @@
     }
     if (changes.settings) shared.settings = mergeSettings(changes.settings.newValue);
     if (changes.manualHandle || changes.settings) renderAll();
-    if (changes.extConfig) applyConfig(changes.extConfig.newValue && changes.extConfig.newValue.config);
     if (changes.chainFilter) setChainsOff(changes.chainFilter.newValue); // (switched in another tab)
   });
 
@@ -353,7 +331,7 @@
       const t = document.createElement('div');
       t.className = 'fa-toast' + (kind ? ' fa-toast-' + kind : '');
       t.setAttribute('role', 'status');
-      t.textContent = RX.text(String(text));
+      t.textContent = String(text);
       t.addEventListener('click', () => t.remove());
       document.body.append(t);
       setTimeout(() => t.remove(), ms || 6000);
@@ -552,11 +530,11 @@
 
   // set text where "{tg}" becomes the Telegram icon
   function fillText(el, text) {
-    const key = text + '\u0000' + RX.v; // (a text change from the server redraws it)
+    const key = String(text);
     if (el.dataset.faText === key) return;
     el.dataset.faText = key;
     el.textContent = '';
-    String(RX.text(String(text))).split('{tg}').forEach((part, i) => {
+    key.split('{tg}').forEach((part, i) => {
       if (i) el.append(icon(TG_ICON, 'fa-tg', 'Telegram'));
       if (part) el.append(part);
     });
@@ -1090,7 +1068,6 @@
   }
 
   function renderPanel(p) {
-    queueTexts();
     const el = p.el;
     const pos = coinOf(p); // your position, or just the coin when you don't hold it
     const st = shared.status;
@@ -1736,7 +1713,6 @@
   }
 
   function renderPane(pane, unseen) {
-    queueTexts();
     for (const b of pane.view.querySelectorAll('.fa-hist-tab')) {
       b.classList.toggle('fa-on', b.dataset.tab === pane.tab);
       const count = b.dataset.tab === 'active' ? (hist.active.length ? String(hist.active.length) : '') : unseen ? String(unseen) : '';
@@ -1855,7 +1831,6 @@
   }
 
   function ensureSettingsMenu() {
-    queueTexts();
     const found = findAccountMenu();
     if (!found) return;
     if (sett.item && sett.item.isConnected && sett.item.previousElementSibling === found.settings) return;
@@ -1918,6 +1893,7 @@
           <div class="fa-set-title">FOMO Alerts</div>
           <div class="fa-set-body"></div>
           <div class="fa-set-socials">${socialHtml()}</div>
+          <div class="fa-set-copy">© 2026 FOMO Alerts. All rights reserved.</div>
         </div>`;
       sett.overlay.addEventListener('click', (e) => {
         if (e.target === sett.overlay) return closeSettings(); // click outside, like Fomo's windows
@@ -2048,6 +2024,12 @@
   }
 
   // ----- unlocking: one payment in USDC / USDG, found by the server within seconds -----
+  // Our only two receiving addresses, built in: the pay screen never shows any other, whatever our server sends, so
+  // nobody can make your $10 go somewhere else, not even with a hacked server. The same two as in
+  // server/payments.js (node deploy/check-extension.js checks they match).
+  const PAY_TO = { evm: '0xFc0f728A90C20F8163C136bD0D5B8547D04Dcf93', solana: 'DUvgVvNau18CmqFrZy3dbUFpzLHMo9YRZTzXQsVJJrGA' };
+  const ourPayAddress = (n) => !!n && typeof n.address === 'string' && norm(n.address) === norm(n.key === 'solana' ? PAY_TO.solana : PAY_TO.evm);
+
   function payMsg(text, kind) {
     if (kind === 'err') reportShown('pay screen', text);
     pay.msg = text;
@@ -2058,6 +2040,12 @@
   // the server's answer about the payment: unlocked → everything updates; else keep the amount
   function payResult(r) {
     if (!r.ok) return false;
+    // only networks that pay one of our own two addresses (PAY_TO): any other is never shown
+    if (Array.isArray(r.networks)) {
+      const ours = r.networks.filter(ourPayAddress);
+      if (ours.length < r.networks.length) report({ kind: 'pay', where: 'pay screen', msg: `Hid ${r.networks.length - ours.length} network(s) whose address isn't ours` });
+      r = { ...r, networks: ours };
+    }
     pay.data = r;
     if (r.access) {
       if (sett.status) sett.status = { ...sett.status, access: r.access };
@@ -2081,7 +2069,8 @@
     const r = await send({ type: 'pay', start: true });
     if (!r.ok) return payMsg(r.error, 'err');
     if (payResult(r)) return;
-    if (!pay.net && r.networks && r.networks.length) pay.net = r.networks[0].key;
+    const nets = pay.data && pay.data.networks; // (only ours: see payResult)
+    if (!pay.net && nets && nets.length) pay.net = nets[0].key;
     renderSettings();
     // while this is open the server listens closely; it unlocks by itself when the payment arrives
     clearInterval(pay.poll);
@@ -2243,6 +2232,11 @@
     box.append(head);
     if (!d || !d.networks) {
       box.append(span(pay.msg || 'Loading…', 'fa-pay-text' + (pay.msgKind ? ' fa-set-' + pay.msgKind : '')));
+      return body.append(box);
+    }
+    if (!d.networks.length) {
+      // every network had an address that isn't ours (see payResult)
+      box.append(span("These payment details don't match the ones built into FOMO Alerts, so they're hidden to keep you safe. Please tell us on Discord.", 'fa-pay-text fa-set-err'));
       return body.append(box);
     }
     const n = d.networks.find((x) => x.key === pay.net) || d.networks[0];
@@ -2418,7 +2412,6 @@
   }
 
   function renderSettings() {
-    queueTexts();
     if (!sett.overlay || !sett.overlay.isConnected) return;
     const st = sett.status;
     const body = sett.overlay.querySelector('.fa-set-body');

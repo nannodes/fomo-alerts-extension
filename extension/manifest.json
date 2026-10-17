@@ -1,11 +1,10 @@
 {
   "manifest_version": 3,
   "name": "FOMO Alerts",
-  "version": "0.9.4",
+  "version": "0.9.6",
   "description": "Take-profit and stop-loss alerts for fomo.family, sent to your Telegram. It never trades for you.",
   "permissions": [
-    "storage",
-    "cookies"
+    "storage"
   ],
   "host_permissions": [
     "https://fomo.family/*",

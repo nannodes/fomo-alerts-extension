@@ -1,18 +1,70 @@
-# FOMO Alerts: Chrome extension source code (version 0.9.4)
+# FOMO Alerts: Chrome extension source code
 
-This is version **0.9.4**, the version in the Chrome Web Store until version 0.9.6 has passed Google's review.
+Take-profit, stop-loss, trailing-stop and buy-the-dip alerts for [fomo.family](https://fomo.family), sent to your Telegram.
 
-To check that the Chrome Web Store version is exactly this code, run this here (needs [Node.js](https://nodejs.org) 18 or newer):
+This repository holds the exact code of the FOMO Alerts Chrome extension, so anyone can check what it does before installing it.
 
-```
-node verify.js
-```
+- **Chrome Web Store:** [FOMO Alerts](https://chromewebstore.google.com/detail/ioakhcjlledhimdgkppifpffapgjlkmm), ID `ioakhcjlledhimdgkppifpffapgjlkmm`
+- **Website:** [fomoalerts.family](https://fomoalerts.family)
+- **Official links and addresses:** [fomoalerts.family/dont-get-scammed.html](https://fomoalerts.family/dont-get-scammed.html)
 
-0.9.6 removes two things that 0.9.4 still has:
+## Check it yourself
 
-- **The `cookies` permission.** 0.9.4 uses it only to read fomoalerts.family's own two cookies: the website's Telegram link and an invite code.
-- **Selectors and texts from our server.** These were data only, never code, but nothing can be changed from the server any more.
+1. **Read the code** in [`extension/`](extension). It's plain JavaScript: there's no build step and nothing is minified. The extension also can't download and run code from the internet, because Chrome doesn't allow that for Manifest V3 extensions.
+2. **Check that the store version is this code.** With [Node.js](https://nodejs.org) 18 or newer, run:
 
-The full README and the current code are on the [main branch](https://github.com/nannodes/fomo-alerts-extension).
+   ```
+   node verify.js
+   ```
 
-© 2026 FOMO Alerts. All rights reserved. See [LICENSE](LICENSE).
+   It downloads FOMO Alerts from Google's own servers (the same file Chrome installs) and compares every file with `extension/`. When everything matches, it ends with:
+
+   ```
+   ✓ Every file is exactly the same: the Chrome Web Store version is this code.
+   ```
+
+3. **Every version has a tag**, for example `v0.9.6`. A new version can take a few days to pass Google's review. If the store still has an older version, check out that version's tag: `git checkout v0.9.5`.
+
+## What it can see and do
+
+**Permissions** (see [`extension/manifest.json`](extension/manifest.json)): `storage`, plus your data on two sites only, fomo.family and fomoalerts.family. Nothing else.
+
+| | |
+|---|---|
+| **Reads on fomo.family** | Only responses that Fomo's own page already gets from Fomo's API (`prod-api.fomo.family`): your Fomo user id and username, your public wallet addresses, and your positions with their entry prices. See [`page-hook.js`](extension/page-hook.js) and [`rules.js`](extension/rules.js). |
+| **Sends to our server** (fomoalerts.family) | Your alerts, which coins you hold, your Fomo user id, username and public wallet addresses, and error reports. [`background.js`](extension/background.js) is the only file that talks to our server. |
+| **Never** | Never sees your password, login token, private key or seed phrase. Has no code that trades, withdraws or signs anything. Never makes requests of its own to Fomo. |
+
+Your private key stays with Privy, Fomo's wallet provider, in its own isolated part of the page on another domain. Neither fomo.family nor any extension running on it can read it.
+
+## Also built in
+
+- **Nothing can be changed from our server.** There are no remote rules, texts or code. Any change is a new version that Google reviews.
+- **Only our two receiving addresses.** The payment screen shows only the two addresses built into [`content.js`](extension/content.js) (`PAY_TO`), whatever the server sends.
+- **Copies can't use our server.** It only answers the official extension (by its ID) and our website.
+
+## Files
+
+| File | What it does |
+|---|---|
+| `extension/manifest.json` | Permissions and which scripts run where |
+| `extension/page-hook.js` | Reads Fomo's API responses inside the page (exact host only) |
+| `extension/chart-bridge.js` | Draws your alert levels on Fomo's charts |
+| `extension/content.js` | The alerts card, the settings window, the payment screen |
+| `extension/background.js` | The only part that talks to the FOMO Alerts server |
+| `extension/rules.js` | How it finds Fomo's boxes and data (built in and frozen) |
+| `extension/vendor/qrcode.js` | QR code library (MIT license, Kazuhiko Arase) |
+| `verify.js` | Compares the Chrome Web Store version with this code |
+
+## Report a problem
+
+- **Security issue:** see [SECURITY.md](SECURITY.md). Please tell us privately first.
+- **Anything else:** [Discord](https://discord.gg/jvjMrvdmy3) or support@fomoalerts.family.
+
+## License
+
+© 2026 FOMO Alerts. All rights reserved. You may read this code and run `verify.js`. You may not copy, change, publish or reuse it without written permission. See [LICENSE](LICENSE).
+
+GitHub lets anyone press "Fork" on a public repository, but that gives no permission to use the code anywhere else.
+
+FOMO Alerts is not affiliated with, endorsed by or sponsored by Fomo (fomo.family).

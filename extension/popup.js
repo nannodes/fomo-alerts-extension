@@ -1,3 +1,4 @@
+// © 2026 FOMO Alerts. All rights reserved.
 // Toolbar popup: only explains where FOMO Alerts lives. Everything else (linking Telegram, access, alerts) is on
 // fomo.family itself: the FOMO Alerts window in the profile menu, the card under Buy/Sell and the side-panel tab.
 const $ = (id) => document.getElementById(id);
@@ -14,12 +15,4 @@ $('open').addEventListener('click', async () => {
     await chrome.tabs.create({ url: 'https://fomo.family/' });
   }
   window.close();
-});
-
-// changed texts from our server (rules.js, kept by background.js)
-chrome.storage.local.get('extConfig', (d) => {
-  const R = self.__faRules;
-  if (!R || !d.extConfig) return;
-  R.set(d.extConfig.config);
-  R.translate(document.body);
 });

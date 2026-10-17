@@ -1,5 +1,7 @@
+// © 2026 FOMO Alerts. All rights reserved.
 // Runs inside the fomo.family page itself.
-// It only LOOKS at responses the site already receives:
+// It only LOOKS at responses the site already receives from Fomo's own API (prod-api.fomo.family, built into
+// rules.js: nothing can point it at another site). Every other request goes through untouched. It reads:
 //   - POST /v2/users                    -> your own user id + username (so we ignore other people's portfolios),
 //                                          who referred your account (shown in FOMO Alerts settings), and your
 //                                          profile picture URL (shown in the hive on fomoalerts.family unless switched off)
@@ -8,24 +10,17 @@
 //   - GET  /v2/users/{id}/referrals, /referrerDetails -> the accounts that joined with your referral code (Fomo
 //                                          loads these under Earnings). content.js only passes them on in the one
 //                                          browser the FOMO Alerts admin paired: the code owner's (free access check)
-// It also reports every Fomo API call (method, path, status) to the extension's Debug page.
+// It also tells content.js about every Fomo API call (method, path, status); nothing is kept.
 // It never reads or forwards login tokens or request headers, and never sends requests of its own.
 (() => {
   if (window.__fomoAlertsHooked) return;
   window.__fomoAlertsHooked = true;
 
-  // Fomo's API host and the paths we read come from rules.js (updated from our server, see there)
+  // Fomo's API host and the paths we read: built into rules.js
   const RX = window.__faRules;
-  const API = () => RX.rules;
-  let T = null;
-  const tests = () => {
-    if (!T || T.v !== RX.v) {
-      const r = API();
-      T = { v: RX.v, me: RX.pathTest(r.apiMe), balances: RX.pathTest(r.apiBalances), handle: RX.pathTest(r.apiUserHandle),
-        referrals: RX.pathTest(r.apiReferrals), referrer: RX.pathTest(r.apiReferrerDetails) };
-    }
-    return T;
-  };
+  const API = RX.rules;
+  const T = { me: RX.pathTest(API.apiMe), balances: RX.pathTest(API.apiBalances), handle: RX.pathTest(API.apiUserHandle),
+    referrals: RX.pathTest(API.apiReferrals), referrer: RX.pathTest(API.apiReferrerDetails) };
   const origFetch = window.fetch;
 
   const post = (type, payload) =>
@@ -101,11 +96,10 @@
     }
   }
 
-  function handle(url, method, data, reqBody) {
+  // u: the request's URL, already checked to be on Fomo's API host (see hookedFetch)
+  function handle(u, method, data, reqBody) {
     try {
-      const u = new URL(url, window.location.href);
-      if (u.hostname !== API().apiHost) return;
-      const t = tests();
+      const t = T;
 
       if (method === 'POST' && t.me.test(u.pathname)) {
         const me = data && data.responseObject;
@@ -164,20 +158,8 @@
     }
   }
 
-  const isUsed = (url) => {
-    let p;
-    try {
-      p = new URL(url, window.location.href).pathname;
-    } catch (_) {
-      return false;
-    }
-    const t = tests();
-    return [t.me, t.balances, t.handle, t.referrals, t.referrer].some((re) => re.test(p));
-  };
-  // Fomo's first responses (15 seconds), kept in case newer rules from our server arrive a moment later: when a
-  // path changed there, those responses still get read
-  const early = [];
-  const START = performance.now();
+  // one of the few paths we read (the list at the top of this file)
+  const isUsed = (path) => [T.me, T.balances, T.handle, T.referrals, T.referrer].some((re) => re.test(path));
 
   // Coins in a Fomo response with their launchpad: { address / tokenAddress, networkId / chainId,
   // launchpad: { launchpadName, launchpadIconUrl } } or with launchpadName / launchpadIconUrl right on the coin.
@@ -200,41 +182,37 @@
   }
 
   const hookedFetch = function (input, init) {
-    let url;
+    let url = null;
     try {
-      url = typeof input === 'string' ? input : input instanceof URL ? input.href : input && input.url;
+      url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input && input.url, window.location.href);
     } catch (_) {
-      url = '';
+      /* not a URL we can read: not Fomo's API */
     }
     // Not Fomo's API: straight through, untouched. (Chrome still lists this file in the stack trace of the
     // site's own blocked requests, e.g. "violates the Content Security Policy" for WalletConnect: those are
     // Fomo's requests and Fomo's policy, not something this extension does.)
-    if (!url || !String(url).includes(API().apiHost)) return origFetch.apply(this, arguments);
+    if (!url || url.hostname !== API.apiHost) return origFetch.apply(this, arguments);
     const p = origFetch.apply(this, arguments);
     try {
       const method = String(
         (init && init.method) || (input && typeof input === 'object' && input.method) || 'GET'
       ).toUpperCase();
-      const path = url ? url.split('?')[0] : '';
-      if (path.includes(API().apiHost)) {
-        const started = performance.now();
-        const shortPath = path.replace(/^https?:\/\/[^/]+/, '');
-        const used = isUsed(path);
-        const keep = !used && performance.now() - START < 15000;
-        const reqBody = method === 'POST' && (used || keep) ? bodyJson(init) : null;
-        p.then((res) => {
-          const ms = Math.round(performance.now() - started);
-          log(`${method} ${shortPath} → ${res ? res.status : '?'} (${ms} ms)${used ? '  ← read by FOMO Alerts' : ''}`);
-          if (used && res && res.ok) res.clone().json().then((d) => handle(url, method, d, reqBody)).catch(() => {});
-          else if (keep && res && res.ok && early.length < 40) res.clone().json().then((d) => early.push({ url, method, d, reqBody })).catch(() => {});
-          // any response with coins' launchpads in it (pump.fun, flap.sh, …): shown in the Telegram pictures
-          if (res && res.ok && /json/.test(res.headers.get('content-type') || '')) {
-            res.clone().text().then((t) => {
-              if (t.length < 3e6 && t.includes('launchpadName')) findLaunchpads(JSON.parse(t));
-            }).catch(() => {});
-          }
-        }).catch((e) => log(`${method} ${shortPath} failed: ${e && e.message}`));
-      }
+      const started = performance.now();
+      const path = url.pathname;
+      const used = isUsed(path);
+      // a request body is only read for the account call (POST /v2/users): it holds the account's public wallets
+      const reqBody = method === 'POST' && used ? bodyJson(init) : null;
+      p.then((res) => {
+        const ms = Math.round(performance.now() - started);
+        log(`${method} ${path} → ${res ? res.status : '?'} (${ms} ms)${used ? '  ← read by FOMO Alerts' : ''}`);
+        if (used && res && res.ok) res.clone().json().then((d) => handle(url, method, d, reqBody)).catch(() => {});
+        // any response with coins' launchpads in it (pump.fun, flap.sh, …): shown in the Telegram pictures
+        if (res && res.ok && /json/.test(res.headers.get('content-type') || '')) {
+          res.clone().text().then((t) => {
+            if (t.length < 3e6 && t.includes('launchpadName')) findLaunchpads(JSON.parse(t));
+          }).catch(() => {});
+        }
+      }).catch((e) => log(`${method} ${path} failed: ${e && e.message}`));
     } catch (_) {
       /* ignore */
     }
@@ -242,20 +220,9 @@
   };
   window.fetch = hookedFetch;
 
-  // the content script pings on start (answer that the hook runs), and passes on the rules from our server
+  // the content script pings on start: answer that the hook runs
   window.addEventListener('message', (e) => {
     if (e.source !== window || !e.data || e.data.source !== 'fomo-alerts-content') return;
     if (e.data.type === 'ping') post('hello', { fetchHooked: window.fetch === hookedFetch });
-    if (e.data.type === 'rules') {
-      RX.set(e.data.payload);
-      for (let i = early.length - 1; i >= 0; i--) {
-        const it = early[i];
-        if (isUsed(it.url)) {
-          early.splice(i, 1);
-          handle(it.url, it.method, it.d, it.reqBody);
-        }
-      }
-      if (performance.now() - START > 15000) early.length = 0;
-    }
   });
 })();

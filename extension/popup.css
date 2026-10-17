@@ -1,3 +1,4 @@
+/* © 2026 FOMO Alerts. All rights reserved. */
 :root {
   --bg: #060510; --bg2: #12111c; --bg3: #23222e; --text: #f4f4f6; --dim: #9899a3; --accent: #516af6;
 }
@@ -34,3 +35,4 @@ footer { display: flex; align-items: center; justify-content: space-between; mar
 .soc { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: var(--bg3); color: var(--dim); }
 .soc:hover { color: var(--text); }
 .soc svg { width: 14px; height: 14px; }
+.copy { margin: 12px 0 0; text-align: center; color: var(--dim); font-size: 11px; }

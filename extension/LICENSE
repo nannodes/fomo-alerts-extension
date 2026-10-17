@@ -1,0 +1,14 @@
+FOMO Alerts
+Copyright © 2026 FOMO Alerts. All rights reserved.
+
+This code is the property of FOMO Alerts. You may install and use the FOMO Alerts extension from the Chrome Web
+Store, and you may read this code to check what it does. You may not copy, change, publish, share, sell or reuse
+this code or any part of it, or use it to make another product, without written permission from FOMO Alerts.
+
+These parts are not ours and keep their own licenses and owners:
+- vendor/qrcode.js: QR Code Generator for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT license (see the top
+  of that file).
+- The Telegram, X, Discord, blockchain and token logos, and the icons copied from fomo.family, belong to their
+  owners.
+
+FOMO Alerts is not affiliated with, endorsed by or sponsored by Fomo (fomo.family).
