@@ -73,7 +73,7 @@ The extension never loads or builds code while it runs: no `importScripts`, `eva
 ## Report a problem
 
 - **Security issue:** see [SECURITY.md](SECURITY.md). Please tell us privately first.
-- **Anything else:** [Discord](https://discord.gg/jvjMrvdmy3) or support@fomoalerts.family.
+- **Anything else:** [Discord](https://discord.gg/RxWRnQNYMx) or support@fomoalerts.family.
 
 ## License
 

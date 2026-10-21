@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FOMO Alerts",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "description": "TP/SL alerts for fomo.family: reads your positions there; our server (fomoalerts.family) watches prices and messages your Telegram.",
   "permissions": [
     "storage"
